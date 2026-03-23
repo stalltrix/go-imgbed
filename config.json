@@ -1,0 +1,9 @@
+{
+	"save_file": "/mnt/data",
+	"user": "admin",
+	"pass": "123456789",
+	"upload": "/upload",
+	"listen": "0.0.0.0:443",
+	"crt": "/mnt/tls.crt",
+	"key": "/mnt/tls.key"
+}

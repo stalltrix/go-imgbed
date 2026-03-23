@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Image Upload</title>
+<style>
+body{
+    font-family: Arial;
+    background:#f5f5f5;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+#drop{
+    width:420px;
+    height:220px;
+    border:2px dashed #888;
+    border-radius:10px;
+    background:white;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    color:#666;
+    cursor:pointer;
+}
+#drop.drag{
+    border-color:#2196f3;
+    color:#2196f3;
+}
+#result{
+    margin-top:20px;
+    word-break:break-all;
+}
+#result a{
+    color:#2196f3;
+}
+</style>
+</head>
+<body>
+
+<div>
+<div id="drop">拖拽图片到这里<br>或点击选择</div>
+<input type="file" id="file" style="display:none" accept="image/*">
+<div id="result"></div>
+</div>
+
+<script>
+const UPLOAD_URL = "{{.Name}}"
+
+const drop = document.getElementById("drop")
+const fileInput = document.getElementById("file")
+const result = document.getElementById("result")
+
+drop.onclick = () => fileInput.click()
+
+fileInput.onchange = () => {
+    if(fileInput.files.length) upload(fileInput.files[0])
+}
+
+drop.ondragover = e=>{
+    e.preventDefault()
+    drop.classList.add("drag")
+}
+
+drop.ondragleave = ()=>{
+    drop.classList.remove("drag")
+}
+
+drop.ondrop = e=>{
+    e.preventDefault()
+    drop.classList.remove("drag")
+    if(e.dataTransfer.files.length){
+        upload(e.dataTransfer.files[0])
+    }
+}
+
+function upload(file){
+    result.innerHTML="上传中..."
+
+    let form = new FormData()
+    form.append("file",file)
+
+    fetch(UPLOAD_URL,{
+        method:"POST",
+        body:form,
+        credentials:"include"
+    })
+    .then(r=>r.json())
+    .then(d=>{
+        if(d.ok){
+            let url = location.origin + d.state
+            result.innerHTML='上传成功:<br><a href="'+url+'" target="_blank">'+url+"</a>"
+        }else{
+            result.innerHTML="上传失败: "+d.state
+        }
+    })
+    .catch(e=>{
+        result.innerHTML="请求失败: "+e
+    })
+}
+</script>
+
+</body>
+</html>
