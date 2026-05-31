@@ -3,14 +3,31 @@
 <head>
 <meta charset="utf-8">
 <title>Image Upload</title>
+
 <style>
 body{
-    font-family: Arial;
+    margin:0;
+    font-family:Arial;
     background:#f5f5f5;
+}
+.navbar{
+    background:#8796a2;
+    padding:12px 25px;
+    display:flex;
+    gap:20px;
+}
+.navbar a{
+    color:white;
+    text-decoration:none;
+    font-weight:bold;
+}
+.navbar a:hover{
+    text-decoration:underline;
+}
+.wrapper{
     display:flex;
     justify-content:center;
-    align-items:center;
-    height:100vh;
+    margin-top:80px;
 }
 #drop{
     width:420px;
@@ -38,12 +55,20 @@ body{
 }
 </style>
 </head>
+
 <body>
 
+<div class="navbar">
+<a href="{{.Name}}">Upload</a>
+<a href="{{.Name}}?act=history">History</a>
+</div>
+
+<div class="wrapper">
 <div>
 <div id="drop">拖拽图片到这里<br>或点击选择</div>
 <input type="file" id="file" style="display:none" accept="image/*">
 <div id="result"></div>
+</div>
 </div>
 
 <script>
@@ -85,7 +110,10 @@ function upload(file){
     fetch(UPLOAD_URL,{
         method:"POST",
         body:form,
-        credentials:"include"
+        credentials:"include",
+        headers:{
+            "X-Type":"upload"
+        }
     })
     .then(r=>r.json())
     .then(d=>{

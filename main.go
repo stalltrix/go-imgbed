@@ -13,6 +13,7 @@ import (
 	"strings"
 	"embed"
     "html/template"
+	"bytes"
 )
 
 var (
@@ -63,10 +64,18 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     if r.Method != "POST" {
+		query := r.URL.Query()
+		act := query.Get("act")
+		if act=="history" {
+			tmpl.ExecuteTemplate(w, "history.html", data)
+			return
+		}
 		tmpl.ExecuteTemplate(w, "upload.html", data)
         return
     }
+	act_type := r.Header.Get("X-Type")
 	w.Header().Set("Content-Type", "application/json")
+  if act_type == "upload" {
     file, header, err := r.FormFile("file")
     if err != nil {
 		files := Img_file{
@@ -155,6 +164,74 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
     }
 	json.NewEncoder(w).Encode(files)
 	return
+  }
+
+  if act_type == "list" {
+		imgLock.RLock()
+		b,err:= json.Marshal(imgMap)
+		imgLock.RUnlock()
+		if err != nil {
+			files := Img_file{
+				State: err.Error(),
+				OK: false,
+			}
+			json.NewEncoder(w).Encode(files)
+			return
+		}
+		b = bytes.ReplaceAll(b, []byte("{}"), []byte("0"))
+		w.Write(b)
+		return
+  }
+  
+  if act_type == "del" {
+		type _act struct {
+			File string `json:"file"`
+		}
+		var u _act
+	
+		err := json.NewDecoder(r.Body).Decode(&u)
+		if err != nil {
+			files := Img_file{
+				State: err.Error(),
+				OK: false,
+			}
+			json.NewEncoder(w).Encode(files)
+			return
+		}
+	
+		imgLock.RLock()
+		_,ok:=imgMap[u.File]
+		imgLock.RUnlock()
+		
+		if !ok {
+			files := Img_file{
+				State: "file not found",
+				OK: false,
+			}
+			json.NewEncoder(w).Encode(files)
+			return
+		}
+		
+		imgLock.Lock()
+		delete(imgMap,u.File)
+		imgLock.Unlock()
+		
+		path := filepath.Join(dataDir, u.File)
+		os.Remove(path)
+		files := Img_file{
+			State: "delete OK",
+			OK: true,
+		}
+		json.NewEncoder(w).Encode(files)
+		return
+  }
+  
+  
+	files := Img_file{
+		State: "type not found",
+		OK: false,
+	}
+	json.NewEncoder(w).Encode(files)
 }
 func viewHandler(w http.ResponseWriter, r *http.Request) {
 	filename := filepath.Base(strings.TrimPrefix(r.URL.Path, "/file/"))
